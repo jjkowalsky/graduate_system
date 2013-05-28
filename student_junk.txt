@@ -1,0 +1,84 @@
+student_junk.txt
+
+//user update form/display user form
+      <form action="student_main.php" method="post">
+      </br>
+      <!-- <p> -->
+        <label>Firstname</label>
+         <input type="text" name="firstname" value="<?= $user_row['Fname'] ?>" size="20" maxlength="20" />
+         
+         <label>M.I.</label>
+         <input type="text" name="M.I." value="<?= $user_row['Minit'] ?>" size="1" maxlength="1"/>
+       
+         <label>Lastname</label> 
+         <input type="text" name="lastname" value="<?= $user_row['Lname'] ?>" size="20" maxlength="20" />
+      </br>
+      </br>
+         <label>Social Security #</label>
+         <input type="text" name="SSN" value="<?= $user_row['Ssn'] ?>" size="9" maxlength="9"/>
+
+         <label>Student #</label>
+         <input type="text" name="studentnumber" value="<?= $user_row['mNumber'] ?>" size="9" maxlength="9" />
+      </br>
+      </br>
+         <label>Birth Date</label>
+         <input type="text" name="birthdate" value="<?= $user_row['BDate'] ?>" size="10" maxlength="10" />
+           
+         <label>Gender</label>
+         <input type="text" name="gender" value="<?= $user_row['Sex'] ?>" size="1" maxlength="1" />
+      </br>
+      </br>
+         <label>Address</label>
+         <input type="text" name="address" value="<?= $user_row['Address'] ?>" size="50" maxlength="50"/>
+      </br>
+      </br>    
+         <label>Home Phone</label>
+         <input type="text" name="phone_home" value="<?= $user_row['Phone_Home'] ?>" size="10" maxlength="10" />
+      </br>
+        <label>Cell Phone</label>
+         <input type="text" name="phone_cell" value="<?= $user_row['Phone_Cell'] ?>" size="10" maxlength="10" />
+      </br>
+         <label>Email</label>
+         <input type="email" name="email" value="<?= $user_row['Email'] ?>" size="15" maxlength="30"/>
+      </br>
+      </br> 
+         <label>Username</label>
+         <input type="text" name="username" value="<?= $user_row['username'] ?>" size="10" maxlength="10"/>
+      </br> 
+         <label>Password</label>
+         <input type="password" name="password" value="<?= $user_row['Password'] ?>" size="8" maxlength="8" />
+      <br>
+      </br> 
+         <input type="submit" name="submit_update" value="submit" />
+      <!-- </p>  -->
+        </form> 
+//end user update form/display user form
+
+//view transcript
+<table border="1" cellspacing="3" cellpadding="5">
+  <tr><th>Course Number</th>
+    <th>Course Section</th>
+    <th>Semester</th>
+    <th>Year</th>
+    <th>Grade</th></tr>
+<?php
+echo "<h3>Your Unofficial Transcript</h3>";
+$classes_query = "SELECT DISTINCT `ENROLL`.`sectID`,`STUDENT`.`mNumber`, `ENROLL`.`mNumber`, `STUDENT`.`userID`, `SECTIONS`.`sectID`, `STUDENT`.*, `ENROLL`.*,`SECTIONS`.*
+FROM STUDENT, ENROLL, SECTIONS
+WHERE ((`STUDENT`.`mNumber` = `ENROLL`.`mNumber`) AND (`STUDENT`.`userID` = ".$_SESSION['id'].") AND (`SECTIONS`.`sectID` = `ENROLL`.`sectID`))";
+$result=mysql_query($classes_query);
+while($row=mysql_fetch_array($result)) {
+  echo "<tr><td>{$row['courseNumber']}</td>";
+  echo "<td>{$row['sectNumber']}</td>";
+  echo "<td>{$row['semester']}</td>";
+  echo "<td>{$row['year_offered']}</td>";
+  echo "<td>{$row['grade']}</td></tr>";
+  $gpa = $row['gpa'];
+}
+?>
+</table>
+</br>
+GPA: <?= $gpa ?>
+GPA: <?= calculate_gpa($row['mNumber']) ?>
+</br>
+//end view transcript

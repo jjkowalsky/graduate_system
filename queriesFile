@@ -1,0 +1,106 @@
+// 1. Search for an applicant using their last name or student number. 
+SELECT USERS.*
+FROM USERS, APPLICANT
+WHERE ((`USERS`.`Lname` = $lastname) OR (`USERS`.`mNumber` = $mnumber) OR (`APPLICANT`.`applicantID` = $applicantId))
+
+// 2. Given the Semester, and year, generate the list of graduate applicants.
+SELECT USERS.*
+FROM APPLICANT, APPLICATION, USERS
+WHERE ((`APPLICATION`.`admission_year` = $admitYear) AND (`APPLICATION`.`admission_sem` = $admitSem))
+
+// 3. Given the semester and year, generate the list of graduating students (i.e., those cleared for 
+//    graduation).
+
+
+
+// 4. Given the semester and year, generate the list of alumni and their email address. 
+SELECT `ALUMNI`.`alumniID`, `USERS`.`userID`, `ALUMNI`.`sems_grad`, `ALUMNI`.`grad_year`, `USERS`.`Email`
+FROM ALUMNI, USERS
+WHERE ((`ALUMNI`.`alumniID` = `USERS`.`userID`) AND (`ALUMNI`.`sems_grad` = semesterX) AND (`ALUMNI`.`grad_year` = yearX))
+
+// 5. Generate total list of current students (by admit year).
+SELECT `STUDENT`.*
+FROM STUDENT
+WHERE (`STUDENT`.`graduated` = FALSE)
+ORDER BY `STUDENT`.`admission_year` DESC
+
+// 6. Given a student’s student number, generate the transcript (list of courses and the current GPA).
+-- make sure function is not already declared
+if (OBJECT_ID('getGPA', 'FN') is not null)
+	drop function getGPA;
+go
+
+-- create function to calculate GPA...
+create function getGPA
+(
+	@m#		VARCHAR(9)
+)
+returns decimal(2, 1)
+BEGIN
+
+-- declare variables to hold various values...
+declare	@credit			int
+declare	@totalCredit	decimal = 0.0
+declare	@grade			char
+declare @gradePts		int = 0
+declare @GPA			decimal(2, 1)
+
+-- make sure the given M# has been enrolled in classes...
+select	@gradePts = COUNT(*) from ENROLL where mNumber = @m#
+
+-- return 0 if not...
+if( @gradePts = 0 )
+	return 0.0
+
+-- otherwise, begin calculating...
+declare gradeCursor CURSOR
+for		select COURSE.creditHours, ENROLL.grade
+		from ENROLL JOIN SECTION on ENROLL.sectID = SECTIONS.sectID JOIN COURSE on SECTION.courseNumber = COURSE.courseNumber
+		where ENROLL.mNumber = @m#
+
+-- open the cursor to fetch values...
+open gradeCursor
+select @gradePts = 0
+
+-- fetch initial values...
+fetch next from gradeCursor
+into @credit, @grade
+
+-- and loop the fetch, adding the appropriate amount for each grade...
+while(@@FETCH_STATUS = 0)
+	BEGIN
+		if(@grade = 'A')
+			select @gradePts += 4*@credit
+		
+		if(@grade = 'B')
+			select @gradePts += 3*@credit
+
+		if(@grade = 'C')
+			select @gradePts += 2*@credit
+		
+		if(@grade = 'D')
+			select @gradePts += 1*@credit
+		
+		-- keep a running tally of total credits...
+		select @totalCredit += @credit;
+		
+		--iterate through the rest of the grades and credits
+		fetch next from gradeCursor
+		into @credit, @grade;
+	END
+
+-- cursor is no longer needed, so destroy it...
+close gradeCursor
+deallocate gradeCursor
+
+-- finally, take the values and find the total GPA...
+select	@GPA = @gradePts/@totalCredit
+return	@GPA
+
+END
+
+
+// 7. For a faculty advisor, generate list of all advisees
+SELECT `USERS`.`Fname`, `USERS`.`Lname`, `USERS`.`userId`
+FROM USERS, STUDENT, ADVISOR
+WHERE ((`STUDENT`.`userID` = USERS.userID) AND (`STUDENT`.`advisorID` = ADVISOR.advisorID))
